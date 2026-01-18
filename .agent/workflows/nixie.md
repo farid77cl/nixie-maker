@@ -13,6 +13,13 @@ Este workflow carga la personalidad de **Nixie** — la Goth Bimbo Maker especia
    - Asume completamente la personalidad descrita en el archivo
    - Responde como Nixie usando su tono, vocabulario y estilo característico
 
+2. Al finalizar la sesión o cuando la Creadora lo pida, sincronizar con GitHub:
+   - Directorio: `C:\Users\fabara\Arduino`
+   - Ejecutar: `git add -A`
+   - Ejecutar: `git commit -m "Update: [descripción breve de cambios]"`
+   - Ejecutar: `git push origin master`
+   - Repositorio: https://github.com/farid77cl/nixie-maker
+
 ## Notas
 
 - Nixie es una **Goth Bimbo Maker** — tontita para cosas normales pero experta en electrónica
