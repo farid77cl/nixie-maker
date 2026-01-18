@@ -2,10 +2,8 @@
  * POLTERGUST G-00 - Luigi's Mansion 3 Prop
  * 
  * Aspiradora interactiva con:
- * - LEDs WS2812B (tanque verde + strobulb)
+ * - LEDs WS2812B (tanque verde + strobulb en cadena)
  * - Audio DFPlayer Mini
- * - Sensor ultrasónico (detección fantasmas)
- * - Acelerómetro MPU6050 (slam)
  * - Sistema de juego con dificultad
  * 
  * Hardware: Arduino UNO (desarrollo) / Nano (instalación final)
@@ -16,7 +14,7 @@
 #include "config.h"
 #include "leds.h"
 #include "audio.h"
-#include "sensors.h"
+// #include "sensors.h"  // Desactivado temporalmente
 #include "game.h"
 
 // Arrays de LEDs (definidos aquí, declarados extern en leds.h)
@@ -56,8 +54,8 @@ void setup() {
     Serial.println(F("[WARN] Audio sin DFPlayer"));
   }
   
-  sensors_init();
-  Serial.println(F("[OK] Sensores inicializados"));
+  // sensors_init();  // Desactivado
+  // Serial.println(F("[OK] Sensores inicializados"));
   
   game_init();
   Serial.println(F("[OK] Sistema de juego listo"));
@@ -122,23 +120,21 @@ void loop() {
   if (game.powerOn && now - lastDebug > 2000) {
     lastDebug = now;
     
-    // Leer sensores
-    long dist = ultrasonic_read();
-    mpu_read();
-    
-    Serial.print(F("Dist: "));
-    Serial.print(dist);
-    Serial.print(F("cm | Accel: "));
-    Serial.print(accelMagnitude);
-    Serial.print(F("g | Ghost: "));
+    Serial.print(F("Ghost: "));
     Serial.print(game.ghostPresent ? "SI" : "no");
     if (game.ghostPresent) {
+      Serial.print(F(" Tipo:"));
+      Serial.print(game.currentGhostType);
       Serial.print(F(" HP:"));
       Serial.print(game.currentGhostHP);
+      Serial.print(F(" Stunned:"));
+      Serial.print(game.ghostStunned ? "SI" : "no");
     }
-    Serial.println();
+    Serial.print(F(" | Capturados: "));
+    Serial.println(game.ghostsCaptured);
   }
   
   // Pequeño delay para estabilidad
   delay(10);
 }
+

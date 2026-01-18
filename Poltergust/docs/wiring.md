@@ -1,6 +1,12 @@
 # Diagrama de Conexiones — Poltergust G-00 🦇⚡
 
-## Esquema General
+## Diagrama Visual
+
+![Esquema de conexiones Poltergust G-00](wiring_diagram.png)
+
+---
+
+## Esquema Detallado
 
 ```
                             ┌─────────────────────────────────────┐

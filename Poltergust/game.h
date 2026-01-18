@@ -9,7 +9,7 @@
 #include "config.h"
 #include "leds.h"
 #include "audio.h"
-#include "sensors.h"
+// sensors.h removido temporalmente (sin sensor ultrasónico)
 
 // Estado del juego
 struct GameState {
@@ -99,13 +99,9 @@ void game_check_spawn() {
   static unsigned long timeSinceLastGhost = 0;
   timeSinceLastGhost += 1000;
   
-  // Probabilidad: 0.1% por segundo, max 5% después de 50 segundos
-  float baseChance = min(timeSinceLastGhost / 1000.0 * 0.1, 5.0);
-  
-  // Bonus si sensor detecta algo
-  if (ultrasonic_detect_object()) {
-    baseChance += 10.0;  // +10% si hay objeto cerca
-  }
+  // Probabilidad: 0.5% por segundo, max 10% después de 20 segundos
+  // (Sin sensor ultrasónico, usamos probabilidad más alta)
+  float baseChance = min(timeSinceLastGhost / 1000.0 * 0.5, 10.0);
   
   // Roll
   if (random(1000) < baseChance * 10) {
@@ -117,6 +113,35 @@ void game_check_spawn() {
 // ============================================================================
 // Mecánica de combate
 // ============================================================================
+// ============================================================================
+// Mecánica de combate
+// ============================================================================
+void game_capture_success() {
+  game.ghostPresent = false;
+  game.ghostStunned = false;
+  game.currentGhostType = GHOST_NONE;
+  game.ghostsCaptured++;
+  
+  leds_capture_success();
+  buzzer_capture_success();
+  audio_play(SND_CAPTURE);
+  
+  Serial.print(F("CAPTURADO! Total: "));
+  Serial.println(game.ghostsCaptured);
+}
+
+void game_ghost_escape() {
+  game.ghostPresent = false;
+  game.ghostStunned = false;
+  game.currentGhostType = GHOST_NONE;
+  
+  leds_ghost_escape();
+  buzzer_ghost_escape();
+  audio_play(SND_GHOST_ESCAPE);
+  
+  Serial.println(F("Fantasma ESCAPÓ!"));
+}
+
 void game_strobulb() {
   if (!game.ghostPresent) return;
   
@@ -142,11 +167,12 @@ void game_vacuum_damage() {
   // Daño base
   int damage = VACUUM_DPS / 10;  // DPS / 10 porque es cada 100ms
   
-  // Bonus por Slam
-  if (mpu_detect_slam()) {
-    damage += SLAM_BONUS;
-    Serial.println(F("SLAM!"));
-  }
+  // Bonus por Slam (desactivado sin MPU6050)
+  // TODO: Reconectar cuando se agregue MPU6050
+  // if (mpu_detect_slam()) {
+  //   damage += SLAM_BONUS;
+  //   Serial.println(F("SLAM!"));
+  // }
   
   game.currentGhostHP -= damage;
   
@@ -157,32 +183,6 @@ void game_vacuum_damage() {
   if (game.currentGhostHP <= 0) {
     game_capture_success();
   }
-}
-
-void game_capture_success() {
-  game.ghostPresent = false;
-  game.ghostStunned = false;
-  game.currentGhostType = GHOST_NONE;
-  game.ghostsCaptured++;
-  
-  leds_capture_success();
-  buzzer_capture_success();
-  audio_play(SND_CAPTURE);
-  
-  Serial.print(F("CAPTURADO! Total: "));
-  Serial.println(game.ghostsCaptured);
-}
-
-void game_ghost_escape() {
-  game.ghostPresent = false;
-  game.ghostStunned = false;
-  game.currentGhostType = GHOST_NONE;
-  
-  leds_ghost_escape();
-  buzzer_ghost_escape();
-  audio_play(SND_GHOST_ESCAPE);
-  
-  Serial.println(F("Fantasma ESCAPÓ!"));
 }
 
 // ============================================================================
