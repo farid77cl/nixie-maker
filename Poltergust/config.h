@@ -11,12 +11,12 @@
 // ============================================================================
 // PINES - LEDs (FastLED WS2812B)
 // ============================================================================
-#define PIN_LED_STRIP     6    // Tira 30 LEDs - Tanque de Goo
-#define PIN_LED_RING      5    // Anillo 8 LEDs - Strobulb
+#define PIN_LED_DATA      6    // Pin de datos para la cadena (Anillo -> Tira)
 #define PIN_LED_STATUS    13   // LED estado on/off
 
-#define NUM_LEDS_STRIP    30   // LEDs en la tira
-#define NUM_LEDS_RING     8    // LEDs en el anillo
+#define NUM_LEDS_RING     8    // LEDs en el anillo (primero en la cadena)
+#define NUM_LEDS_STRIP    30   // LEDs en la tira (segundo en la cadena)
+#define NUM_LEDS_TOTAL    38   // Total: 8 + 30
 
 // ============================================================================
 // PINES - Audio (DFPlayer Mini)
@@ -99,7 +99,7 @@ enum GhostType {
 // ============================================================================
 // TIEMPOS
 // ============================================================================
-#define STROBULB_FLASH_MS   200   // Duración del flash
-#define STUN_DURATION_MS    3000  // Tiempo que dura el stun
+#define STROBULB_FLASH_MS   1000  // Duración del flash extendida a 1s
+#define STUN_DURATION_MS    4000  // Aumentamos stun a 4s por el flash largo
 
 #endif // CONFIG_H

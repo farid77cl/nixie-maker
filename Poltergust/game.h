@@ -9,7 +9,7 @@
 #include "config.h"
 #include "leds.h"
 #include "audio.h"
-// sensors.h removido temporalmente (sin sensor ultrasónico)
+#include "sensors.h" 
 
 // Estado del juego
 struct GameState {
@@ -167,12 +167,12 @@ void game_vacuum_damage() {
   // Daño base
   int damage = VACUUM_DPS / 10;  // DPS / 10 porque es cada 100ms
   
-  // Bonus por Slam (desactivado sin MPU6050)
-  // TODO: Reconectar cuando se agregue MPU6050
-  // if (mpu_detect_slam()) {
-  //   damage += SLAM_BONUS;
-  //   Serial.println(F("SLAM!"));
-  // }
+  // Bonus por Slam (activado con MPU6050)
+  if (mpu_detect_slam()) {
+    damage += SLAM_BONUS;
+    Serial.print(F("SLAM! Accel: "));
+    Serial.println(accelMagnitude);
+  }
   
   game.currentGhostHP -= damage;
   
@@ -189,7 +189,13 @@ void game_vacuum_damage() {
 // Update principal del juego
 // ============================================================================
 void game_update(bool vacuumPressed, bool strobulbPressed) {
-  if (!game.powerOn) return;
+  if (!game.powerOn) {
+    audio_update(false, false);
+    return;
+  }
+  
+  // Actualizar música de fondo
+  audio_update(true, game.ghostPresent);
   
   // Strobulb
   if (strobulbPressed) {
@@ -239,9 +245,9 @@ void game_power_on() {
   leds_status(true);
   audio_play(SND_POWER_ON);
   
-  // Efecto de encendido
-  for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-    ledsStrip[i] = CRGB(0, 100, 0);
+  // Efecto de encendido (tira: 8-37)
+  for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+    leds[i] = CRGB(0, 100, 0);
     FastLED.show();
     delay(30);
   }

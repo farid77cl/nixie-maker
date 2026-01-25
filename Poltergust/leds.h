@@ -9,16 +9,15 @@
 #include <FastLED.h>
 #include "config.h"
 
-// Arrays de LEDs
-extern CRGB ledsStrip[NUM_LEDS_STRIP];
-extern CRGB ledsRing[NUM_LEDS_RING];
+// Array global de LEDs (en serie)
+extern CRGB leds[NUM_LEDS_TOTAL];
 
 // ============================================================================
 // Inicialización
 // ============================================================================
 void leds_init() {
-  FastLED.addLeds<WS2812B, PIN_LED_STRIP, GRB>(ledsStrip, NUM_LEDS_STRIP);
-  FastLED.addLeds<WS2812B, PIN_LED_RING, GRB>(ledsRing, NUM_LEDS_RING);
+  // Inicializar toda la cadena en el pin definido
+  FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(leds, NUM_LEDS_TOTAL);
   FastLED.setBrightness(150);
   
   pinMode(PIN_LED_STATUS, OUTPUT);
@@ -38,8 +37,8 @@ void leds_goo_idle() {
     direction = -direction;
   }
   
-  for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-    ledsStrip[i] = CRGB(0, brightness, 0);
+  for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+    leds[i] = CRGB(0, brightness, 0);
   }
   FastLED.show();
 }
@@ -48,8 +47,8 @@ void leds_goo_bubble() {
   // Efecto de burbuja random
   static unsigned long lastBubble = 0;
   if (millis() - lastBubble > 200) {
-    int bubblePos = random(NUM_LEDS_STRIP);
-    ledsStrip[bubblePos] = CRGB(100, 255, 100);
+    int bubblePos = NUM_LEDS_RING + random(NUM_LEDS_STRIP);
+    leds[bubblePos] = CRGB(100, 255, 100);
     lastBubble = millis();
   }
   FastLED.show();
@@ -59,17 +58,17 @@ void leds_goo_bubble() {
 // Strobulb - Flash blanco
 // ============================================================================
 void leds_strobulb_flash() {
-  // Flash máximo brillo
+  // Flash máximo brillo (solo anillo: 0-7)
   for (int i = 0; i < NUM_LEDS_RING; i++) {
-    ledsRing[i] = CRGB::White;
+    leds[i] = CRGB::White;
   }
   FastLED.setBrightness(255);
   FastLED.show();
   delay(STROBULB_FLASH_MS);
   
-  // Apagar
+  // Apagar anillo
   for (int i = 0; i < NUM_LEDS_RING; i++) {
-    ledsRing[i] = CRGB::Black;
+    leds[i] = CRGB::Black;
   }
   FastLED.setBrightness(150);
   FastLED.show();
@@ -88,16 +87,16 @@ void leds_ghost_alert(uint8_t ghostType) {
     default:           color = CRGB::Green;   break;
   }
   
-  // Parpadeo de alerta
+  // Parpadeo de alerta (en la tira)
   for (int flash = 0; flash < 5; flash++) {
-    for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-      ledsStrip[i] = color;
+    for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+      leds[i] = color;
     }
     FastLED.show();
     delay(100);
     
-    for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-      ledsStrip[i] = CRGB::Black;
+    for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+      leds[i] = CRGB::Black;
     }
     FastLED.show();
     delay(100);
@@ -119,9 +118,9 @@ void leds_ghost_hp(int currentHP, int maxHP, uint8_t ghostType) {
   
   for (int i = 0; i < NUM_LEDS_STRIP; i++) {
     if (i < ledsOn) {
-      ledsStrip[i] = color;
+      leds[NUM_LEDS_RING + i] = color;
     } else {
-      ledsStrip[i] = CRGB::Black;
+      leds[NUM_LEDS_RING + i] = CRGB::Black;
     }
   }
   FastLED.show();
@@ -130,16 +129,16 @@ void leds_ghost_hp(int currentHP, int maxHP, uint8_t ghostType) {
 void leds_capture_success() {
   // Efecto de captura exitosa - rainbow celebración
   for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-      ledsStrip[i] = CHSV((i * 256 / NUM_LEDS_STRIP + j * 50) % 256, 255, 255);
+    for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+      leds[i] = CHSV(((i - NUM_LEDS_RING) * 256 / NUM_LEDS_STRIP + j * 50) % 256, 255, 255);
     }
     FastLED.show();
     delay(100);
   }
   
   // Volver a verde
-  for (int i = 0; i < NUM_LEDS_STRIP; i++) {
-    ledsStrip[i] = CRGB(0, 100, 0);
+  for (int i = NUM_LEDS_RING; i < NUM_LEDS_TOTAL; i++) {
+    leds[i] = CRGB(0, 100, 0);
   }
   FastLED.show();
 }
@@ -162,8 +161,7 @@ void leds_status(bool on) {
 }
 
 void leds_all_off() {
-  for (int i = 0; i < NUM_LEDS_STRIP; i++) ledsStrip[i] = CRGB::Black;
-  for (int i = 0; i < NUM_LEDS_RING; i++) ledsRing[i] = CRGB::Black;
+  fill_solid(leds, NUM_LEDS_TOTAL, CRGB::Black);
   FastLED.show();
   leds_status(false);
 }

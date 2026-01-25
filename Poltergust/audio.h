@@ -14,12 +14,26 @@
 SoftwareSerial dfSerial(PIN_DFPLAYER_TX, PIN_DFPLAYER_RX); // RX, TX
 DFRobotDFPlayerMini dfPlayer;
 
+// Estado del Master Audio
+enum AudioState {
+  STATE_SILENT,
+  STATE_THEME,
+  STATE_EFFECT
+};
+
+AudioState currentAudioState = STATE_SILENT;
+unsigned long lastAudioAction = 0;
+
 // ============================================================================
 // Inicialización
 // ============================================================================
 bool audio_init() {
   pinMode(PIN_BUZZER, OUTPUT);
-  noTone(PIN_BUZZER);
+  
+  // BIP DE INICIO (Prueba de Hardware)
+  tone(PIN_BUZZER, 2000, 100);
+  delay(150);
+  tone(PIN_BUZZER, 2500, 100);
   
   dfSerial.begin(9600);
   delay(100);
@@ -38,18 +52,48 @@ bool audio_init() {
 }
 
 // ============================================================================
+// Master Audio Manager (Update)
+// ============================================================================
+void audio_update(bool powerOn, bool ghostPresent) {
+  if (!powerOn) {
+    if (currentAudioState != STATE_SILENT) {
+      dfPlayer.stop();
+      currentAudioState = STATE_SILENT;
+    }
+    return;
+  }
+
+  // Si no hay efectos prioritarios sonando, poner el Theme de fondo
+  if (currentAudioState == STATE_SILENT || (currentAudioState == STATE_THEME && !ghostPresent)) {
+      static unsigned long lastThemePlay = 0;
+      // Reiniciar theme cada cierto tiempo si se detiene o al iniciar
+      if (currentAudioState != STATE_THEME || millis() - lastThemePlay > 60000) { 
+        dfPlayer.play(SND_THEME);
+        currentAudioState = STATE_THEME;
+        lastThemePlay = millis();
+        Serial.println(F("Audio: Theme iniciado"));
+      }
+  }
+}
+
+// ============================================================================
 // Reproducción de sonidos
 // ============================================================================
 void audio_play(uint8_t trackNum) {
   dfPlayer.play(trackNum);
+  currentAudioState = STATE_EFFECT;
+  lastAudioAction = millis();
 }
 
 void audio_play_vacuum() {
-  dfPlayer.loop(SND_VACUUM);  // Loop mientras aspira
+  dfPlayer.loop(SND_VACUUM);
+  currentAudioState = STATE_EFFECT;
+  lastAudioAction = millis();
 }
 
 void audio_stop() {
   dfPlayer.stop();
+  currentAudioState = STATE_SILENT; // Forzará el reinicio del theme en el próximo loop si powerOn
 }
 
 void audio_volume(uint8_t vol) {
@@ -64,8 +108,7 @@ void buzzer_beep(int freq, int duration) {
 }
 
 void buzzer_ghost_alert(uint8_t ghostType) {
-  // Beeps según dificultad
-  int beeps = ghostType;  // 1-4 beeps
+  int beeps = ghostType;
   int freq = 1000 + (ghostType * 200);
   
   for (int i = 0; i < beeps; i++) {
@@ -75,8 +118,7 @@ void buzzer_ghost_alert(uint8_t ghostType) {
 }
 
 void buzzer_capture_success() {
-  // Melodía de éxito
-  int melody[] = {523, 659, 784, 1047};  // C5, E5, G5, C6
+  int melody[] = {523, 659, 784, 1047};
   for (int i = 0; i < 4; i++) {
     buzzer_beep(melody[i], 100);
     delay(120);
@@ -84,7 +126,6 @@ void buzzer_capture_success() {
 }
 
 void buzzer_ghost_escape() {
-  // Sonido de escape triste
   for (int f = 800; f > 200; f -= 50) {
     buzzer_beep(f, 30);
     delay(40);

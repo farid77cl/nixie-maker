@@ -14,12 +14,11 @@
 #include "config.h"
 #include "leds.h"
 #include "audio.h"
-// #include "sensors.h"  // Desactivado temporalmente
+#include "sensors.h"
 #include "game.h"
 
-// Arrays de LEDs (definidos aquí, declarados extern en leds.h)
-CRGB ledsStrip[NUM_LEDS_STRIP];
-CRGB ledsRing[NUM_LEDS_RING];
+// Array de LEDs (definido aquí, declarado extern en leds.h)
+CRGB leds[NUM_LEDS_TOTAL];
 
 // Estado de botones (para debounce)
 bool lastBtnPower = HIGH;
@@ -54,8 +53,8 @@ void setup() {
     Serial.println(F("[WARN] Audio sin DFPlayer"));
   }
   
-  // sensors_init();  // Desactivado
-  // Serial.println(F("[OK] Sensores inicializados"));
+  sensors_init();
+  Serial.println(F("[OK] Sensores inicializados"));
   
   game_init();
   Serial.println(F("[OK] Sistema de juego listo"));
@@ -120,17 +119,21 @@ void loop() {
   if (game.powerOn && now - lastDebug > 2000) {
     lastDebug = now;
     
-    Serial.print(F("Ghost: "));
+    Serial.print(F("Gost: "));
     Serial.print(game.ghostPresent ? "SI" : "no");
+    
     if (game.ghostPresent) {
       Serial.print(F(" Tipo:"));
       Serial.print(game.currentGhostType);
       Serial.print(F(" HP:"));
       Serial.print(game.currentGhostHP);
-      Serial.print(F(" Stunned:"));
-      Serial.print(game.ghostStunned ? "SI" : "no");
     }
-    Serial.print(F(" | Capturados: "));
+    
+    // Debug MPU6050
+    mpu_read();
+    Serial.print(F(" | Accel: "));
+    Serial.print(accelMagnitude);
+    Serial.print(F("g | Capturados: "));
     Serial.println(game.ghostsCaptured);
   }
   
